@@ -98,152 +98,283 @@ $page_description = "Cerca e trova bandi, finanziamenti PNRR e agevolazioni per 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        let map;
-        const regionData = <?php echo $map_data_json; ?>; // Assicurati che questa variabile PHP sia definita e contenga JSON valido
+  document.addEventListener('DOMContentLoaded', function() {
+    let map;
+    // Assicurati che questa variabile PHP sia definita correttamente sopra questo script
+    // e contenga un oggetto JSON valido con i dati delle regioni (lat, lng, status, label). Esempio:
+    // const regionData = {"Lombardia": {"lat": 45.4642, "lng": 9.1900, "status": "green", "label": "Attivo"}, ...};
+    const regionData = <?php echo isset($map_data_json) && json_decode($map_data_json) !== null ? $map_data_json : '{}'; ?>;
+    let regionMarkers = {}; // Oggetto per memorizzare i marker Leaflet per regione
 
-        // --- Mappa Leaflet ---
-        var mapElement = document.getElementById('italy-map-fullscreen');
-        if (mapElement) {
-            try {
-                map = L.map(mapElement, {
-                    center: [42.5, 12.5],
-                    zoom: 0,
-                    scrollWheelZoom: false,
-                    zoomControl: false
-                });
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    // --- Mappa Leaflet ---
+    var mapElement = document.getElementById('italy-map-fullscreen');
+    if (mapElement) {
+        try {
+            map = L.map(mapElement, {
+                center: [42.5, 12.5], // Centro Italia
+                zoom: 5.5,           // Zoom iniziale
+                scrollWheelZoom: false,// Disabilita zoom con rotellina
+                zoomControl: false    // Nasconde i controlli +/- dello zoom
+            });
+
+            // Aggiunge il Tile Layer SCURO da CartoDB
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                     attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/attributions">CARTO</a>',
                     subdomains: 'abcd',
                     maxZoom: 12,
                     minZoom: 5
                 }).addTo(map);
 
-                function createColoredIcon(color) {
-                    return L.divIcon({
-                        className: 'custom-div-icon',
-                        html: `<div style='background-color:${color};width:14px;height:14px;border-radius:50%; border: 2px solid rgba(255,255,255,0.7); box-shadow: 0 1px 3px rgba(0,0,0,0.4);'></div>`,
-                        iconSize: [14, 14],
-                        iconAnchor: [7, 7]
-                    });
-                }
-                var greenIcon = createColoredIcon('#28a745'),
-                    yellowIcon = createColoredIcon('#ffc107'),
-                    redIcon = createColoredIcon('#dc3545');
+            // Funzione per creare icone colorate personalizzate
+            function createColoredIcon(color) {
+                return L.divIcon({
+                    className: 'custom-div-icon', // Puoi usare questa classe per stili CSS aggiuntivi se vuoi
+                    html: `<div style='background-color:${color};width:14px;height:14px;border-radius:50%; border: 2px solid rgba(255,255,255,0.7); box-shadow: 0 1px 3px rgba(0,0,0,0.4);'></div>`,
+                    iconSize: [14, 14], // Dimensioni dell'icona
+                    iconAnchor: [7, 7]   // Punto di ancoraggio (centro)
+                });
+            }
+            // Crea le istanze delle icone
+            var greenIcon = createColoredIcon('#28a745'), // Verde
+                yellowIcon = createColoredIcon('#ffc107'), // Giallo
+                redIcon = createColoredIcon('#dc3545');   // Rosso
 
-                for (var regionName in regionData) {
-                    if (regionData.hasOwnProperty(regionName)) {
-                        var data = regionData[regionName],
-                            icon, statusClass;
-                        switch (data.status) {
-                            case 'green': icon = greenIcon; statusClass = 'green'; break;
-                            case 'yellow': icon = yellowIcon; statusClass = 'yellow'; break;
-                            case 'red': icon = redIcon; statusClass = 'red'; break;
-                            default: icon = L.divIcon(); statusClass = '';
+            // Ciclo per creare i marker sulla mappa
+            for (var regionName in regionData) {
+                if (regionData.hasOwnProperty(regionName)) {
+                    var data = regionData[regionName];
+                    var icon, statusClass = ''; // Inizializza statusClass
+
+                    // Determina l'icona e la classe CSS in base allo status
+                    switch (data.status) {
+                        case 'green':
+                            icon = greenIcon;
+                            statusClass = 'green';
+                            break;
+                        case 'yellow':
+                            icon = yellowIcon;
+                            statusClass = 'yellow';
+                            break;
+                        case 'red':
+                            icon = redIcon;
+                            statusClass = 'red';
+                            break;
+                        default: // Fallback se status non è definito o non corrisponde
+                           // Usa un'icona di default o nessuna icona visibile
+                           icon = L.divIcon({iconSize: [0,0]}); // Icona invisibile
+                           console.warn(`Status non valido o mancante per ${regionName}:`, data.status);
+                    }
+
+                    // Crea il marker solo se abbiamo latitudine e longitudine
+                    if (data.lat && data.lng) {
+                        var marker = L.marker([data.lat, data.lng], { icon: icon }).addTo(map);
+
+                        // Crea il contenuto del popup
+                        var popupContent = `<strong>${regionName}</strong><br>Stato Fondi: `;
+                        if (statusClass) {
+                            // Usa l'etichetta 'label' se disponibile, altrimenti un testo generico
+                            popupContent += `<span class='status-label ${statusClass}'>${data.label || data.status.charAt(0).toUpperCase() + data.status.slice(1)}</span>`;
+                        } else {
+                            popupContent += "N/D"; // Non disponibile
                         }
-                        if (data.lat && data.lng) {
-                            var marker = L.marker([data.lat, data.lng], { icon: icon }).addTo(map);
-                            var popupContent = `<strong>${regionName}</strong><br>Stato Fondi: `;
-                            if (statusClass) {
-                                popupContent += `<span class='status-label ${statusClass}'>${data.label || 'Disponibile'}</span>`; // Aggiunto fallback label
-                            } else {
-                                popupContent += "N/D";
-                            }
-                            marker.bindPopup(popupContent);
-                        }
+                        marker.bindPopup(popupContent);
+
+                        // Memorizza il marker nell'oggetto `regionMarkers`
+                        regionMarkers[regionName] = marker;
+                    } else {
+                        console.warn(`Lat/Lng mancanti per ${regionName}. Marker non creato.`);
                     }
                 }
-                // Invalidate map size dopo un breve ritardo per assicurare il rendering corretto
-                setTimeout(() => { if (map) map.invalidateSize(); }, 200);
-            } catch (e) {
-                console.error("Mappa Errore:", e);
-                if (mapElement) mapElement.innerHTML = "<p>Errore nel caricamento della mappa.</p>"; // Feedback utente
             }
-        } else {
-             console.log("Elemento #italy-map-fullscreen non trovato.");
+
+            // Invalida la dimensione della mappa dopo un breve ritardo per assicurare il rendering corretto
+            setTimeout(() => { if (map) map.invalidateSize(); }, 200);
+            console.log("Mappa Leaflet inizializzata con successo.");
+
+        } catch (e) {
+            console.error("Errore durante l'inizializzazione della mappa Leaflet:", e);
+            // Mostra un messaggio di errore all'utente nel contenitore della mappa
+            if (mapElement) mapElement.innerHTML = "<p style='color:#ccc; text-align:center; padding-top: 50px;'>Impossibile caricare la mappa interattiva.</p>";
         }
+    } else {
+         console.log("Elemento contenitore della mappa (#italy-map-fullscreen) non trovato nel DOM.");
+    }
+    // --- Fine Mappa Leaflet ---
 
-        // --- Tom Select ---
 
-        // Funzione helper per renderizzare le opzioni con icona info (se presente data-details)
-        function renderTomSelectOption(data, escape, includeIcon = false) {
-            let details = '';
-            // Correggi il modo di accedere all'elemento originale e all'opzione
-            const tsInstance = this; // 'this' è l'istanza di TomSelect
-            if (tsInstance && tsInstance.settings && tsInstance.settings.originalElement && data.value) {
-                const originalSelect = tsInstance.settings.originalElement;
-                const originalOption = originalSelect.querySelector(`option[value="${escape(data.value)}"]`);
+    // --- Tom Select con Larghezza Dinamica e Apertura Popup ---
+
+    // Funzione helper per renderizzare le opzioni di TomSelect (con/senza icona info)
+    function renderTomSelectOption(data, escape, includeIcon = false) {
+        let details = '';
+        const tsInstance = this; // 'this' è l'istanza di TomSelect
+        // Accedi all'elemento select originale dall'istanza TomSelect
+        if (tsInstance && tsInstance.settings && tsInstance.settings.originalElement && data.value) {
+            const originalSelect = tsInstance.settings.originalElement;
+             // Usa try-catch per sicurezza con querySelector e valori potenzialmente problematici
+            try {
+                 // Assicurati che il valore sia valido per un selettore CSS
+                 const escapedValue = CSS.escape ? CSS.escape(data.value) : escape(data.value); // Usa CSS.escape se disponibile
+                 const originalOption = originalSelect.querySelector(`option[value="${escapedValue}"]`);
                 if (originalOption) {
                     details = originalOption.getAttribute('data-details') || '';
                 }
+            } catch(e) {
+                console.warn(`Errore nel trovare l'opzione originale per il valore: ${data.value}`, e);
             }
-
-            let iconHtml = '';
-            if (includeIcon && details) {
-                // Usa l'escape corretto per l'attributo title
-                iconHtml = `<i class="fa-regular fa-circle-info info-icon" title="${escape(details)}"></i>`;
-            }
-            // Usa l'escape corretto per il testo dell'opzione
-            return `<div class="ts-option"><span class="ts-option-text">${escape(data.text)}</span>${iconHtml}</div>`;
         }
 
-        // Inizializzazione TomSelect per REGIONE
-        var regioneSelect = document.getElementById('regione_hp');
-        if (regioneSelect) {
-            try {
-                new TomSelect(regioneSelect, {
-                    create: false,
-                    sortField: { field: null }, // Mantieni l'ordine originale se necessario
-                    render: {
-                        option: function(data, escape) { return renderTomSelectOption.call(this, data, escape, false); }, // Passa 'this' e escape
-                        item: function(data, escape) { return `<div>${escape(data.text)}</div>`; } // Escape anche qui
-                    },
-                    onChange: function(value) {
-                        if (map && value && regionData[value]) {
-                            const r = regionData[value];
-                            if (r.lat && r.lng) map.flyTo([r.lat, r.lng], 8, { animate: true, duration: 1.0 });
-                        } else if (map && !value) {
-                            // Torna alla vista iniziale se nessuna regione è selezionata
-                            map.flyTo([42.5, 12.5], 5.5, { animate: true, duration: 1.0 });
+        let iconHtml = '';
+        // Mostra l'icona solo se includeIcon è true E ci sono dettagli
+        if (includeIcon && details) {
+            // Usa escape sulla stringa dei dettagli per sicurezza nell'attributo title
+            iconHtml = `<i class="fa-regular fa-circle-info info-icon" title="${escape(details)}"></i>`;
+        }
+        // Usa escape sul testo dell'opzione per sicurezza
+        return `<div class="ts-option"><span class="ts-option-text">${escape(data.text)}</span>${iconHtml}</div>`;
+    }
+
+    // Funzione Helper per inizializzare TomSelect e gestire la larghezza del dropdown
+    function initializeTomSelectWithDynamicWidth(selectorId, userOptions = {}) {
+        const element = document.getElementById(selectorId);
+        if (!element) {
+            console.warn(`Elemento #${selectorId} non trovato per TomSelect.`);
+            return; // Esce se l'elemento non esiste
+        }
+
+        try {
+            // Opzioni di default che verranno applicate a tutti i TomSelect inizializzati con questa funzione
+            const defaultOptions = {
+                create: false,         // Non permette all'utente di creare nuove opzioni
+                dropdownParent: 'body',// Appende il dropdown al body per evitare problemi di clipping/styling
+                render: {              // Render di default per item e option (può essere sovrascritto)
+                    item: function(data, escape) { return `<div>${escape(data.text)}</div>`; },
+                    option: function(data, escape) { return renderTomSelectOption.call(this, data, escape, false); } // Usa il render helper di default
+                },
+                onInitialize: function() {
+                    // Codice eseguito una volta che TomSelect è inizializzato
+                    // 'this' qui è l'istanza di TomSelect
+                    console.log(`TomSelect per #${selectorId} inizializzato.`);
+                     // Potresti aggiungere una classe per indicare che JS ha funzionato
+                    // this.wrapper.classList.add('tomselect-initialized');
+                },
+                onDropdownOpen: function(dropdown) {
+                    // Codice eseguito ogni volta che il dropdown si apre
+                    // 'this' è l'istanza TomSelect, 'dropdown' è l'elemento DOM del dropdown
+                    const wrapper = this.wrapper; // Il div .ts-wrapper creato da TomSelect
+                    if (wrapper && dropdown) {
+                        const wrapperWidth = wrapper.offsetWidth; // Larghezza del campo di input visibile
+                        if (wrapperWidth > 0) {
+                             // Imposta la larghezza MINIMA del dropdown uguale a quella del wrapper
+                             // Permette al dropdown di espandersi se un'opzione è più lunga,
+                             // ma non sarà mai più stretto del campo.
+                            dropdown.style.minWidth = wrapperWidth + 'px';
+
+                            // Se vuoi forzare la larghezza ESATTA (rischio di tagliare opzioni lunghe):
+                            // dropdown.style.width = wrapperWidth + 'px';
+                        } else {
+                             console.warn(`Dropdown #${selectorId}: Impossibile ottenere larghezza valida dal wrapper.`);
                         }
-                    },
-                    // *** AGGIUNTA CHIAVE QUI ***
-                    dropdownParent: 'body'
-                    // **************************
-                });
-                console.log("TomSelect per Regione HP inizializzato.");
-            } catch (e) {
-                console.error("TS Regione Errore:", e);
-            }
-        } else {
-             console.log("Elemento #regione_hp non trovato.");
-        }
+                    }
+                }
+                // Aggiungi altri eventi di default se necessario (es. onFocus, onBlur, etc.)
+            };
 
-        // Inizializzazione TomSelect per DIMENSIONE PMI
-        var dimensioneSelect = document.getElementById('dimensione_pmi_hp');
-        if (dimensioneSelect) {
-            try {
-                new TomSelect(dimensioneSelect, {
-                    create: false,
-                    sortField: { field: null }, // Mantieni l'ordine originale
-                    allowEmptyOption: false, // Impedisce la deselezione se non c'è opzione vuota
-                    render: {
-                       option: function(data, escape) { return renderTomSelectOption.call(this, data, escape, true); }, // Passa 'this' e escape, abilita icona
-                       item: function(data, escape) { return `<div>${escape(data.text)}</div>`; } // Escape anche qui
-                    },
-                    // *** AGGIUNTA CHIAVE QUI ***
-                    dropdownParent: 'body'
-                    // **************************
-                });
-                 console.log("TomSelect per Dimensione PMI HP inizializzato.");
-            } catch (e) {
-                console.error("TS Dimensione Errore:", e);
+            // Unisci le opzioni di default con quelle specifiche passate per questo select
+            // Le opzioni in userOptions sovrascrivono quelle in defaultOptions se hanno lo stesso nome
+            const finalOptions = { ...defaultOptions, ...userOptions };
+            // Gestione speciale per l'oggetto 'render', per unire le sue proprietà invece di sovrascrivere l'intero oggetto
+            if (userOptions.render) {
+                finalOptions.render = { ...defaultOptions.render, ...userOptions.render };
             }
-        } else {
-             console.log("Elemento #dimensione_pmi_hp non trovato.");
+            // Assicurati che funzioni come onChange vengano correttamente assegnate se presenti in userOptions
+             if (userOptions.onChange) {
+                 finalOptions.onChange = userOptions.onChange;
+             }
+
+
+            // Inizializza TomSelect sull'elemento con le opzioni finali
+            new TomSelect(element, finalOptions);
+
+        } catch (e) {
+            console.error(`Errore durante l'inizializzazione di TomSelect per #${selectorId}:`, e);
         }
-      });
-    </script>
+    }
+
+    // --- Inizializzazione Specifica per i Select della Homepage ---
+
+    // Opzioni specifiche per il select della Regione (#regione_hp)
+    const regioneHpOptions = {
+        sortField: { field: null }, // Mantiene l'ordine originale delle opzioni nell'HTML
+        // Non serve 'render' qui perché vogliamo quello di default (senza icona info)
+
+        // Funzione eseguita quando il valore del select cambia
+        onChange: function(value) {
+            if (map) { // Controlla se la mappa è stata inizializzata
+                if (value && regionData[value]) {
+                    // È stata selezionata una regione valida
+                    const regionInfo = regionData[value]; // Dati della regione selezionata
+
+                    if (regionInfo.lat && regionInfo.lng) {
+                        // Vola sulla mappa alle coordinate della regione
+                        map.flyTo([regionInfo.lat, regionInfo.lng], 8, { // Zoom 8 sulla regione
+                            animate: true,
+                            duration: 1.0 // Durata animazione in secondi
+                        });
+
+                        // Cerca il marker corrispondente nell'oggetto che abbiamo popolato
+                        const targetMarker = regionMarkers[value];
+                        if (targetMarker) {
+                            // Apri il popup del marker trovato
+                            // Usa setTimeout per dare tempo a flyTo di iniziare l'animazione
+                            setTimeout(() => {
+                                targetMarker.openPopup();
+                                console.log("Popup aperto per:", value);
+                            }, 400); // Ritardo in millisecondi (prova ad aggiustarlo se serve)
+                        } else {
+                            console.warn("Marker non trovato per la regione selezionata:", value);
+                            map.closePopup(); // Chiudi eventuali popup aperti se non c'è marker
+                        }
+                    } else {
+                         console.warn(`Lat/Lng mancanti per la regione selezionata: ${value}`);
+                         map.closePopup(); // Chiudi popup se mancano coordinate
+                    }
+                } else {
+                    // Nessuna regione selezionata (valore vuoto) o regione non trovata nei dati
+                    // Riporta la mappa alla vista iniziale
+                    map.flyTo([42.5, 12.5], 5.5, { // Coordinate e zoom iniziali
+                        animate: true,
+                        duration: 1.0
+                    });
+                    // Chiudi qualsiasi popup eventualmente aperto
+                    map.closePopup();
+                }
+            } else {
+                console.warn("La mappa non è inizializzata, impossibile interagire con onChange della regione.");
+            }
+        }
+    };
+    // Inizializza TomSelect per la regione usando la funzione helper
+    initializeTomSelectWithDynamicWidth('regione_hp', regioneHpOptions);
+
+    // Opzioni specifiche per il select della Dimensione PMI (#dimensione_pmi_hp)
+    const dimensioneHpOptions = {
+        sortField: { field: null }, // Mantiene l'ordine originale
+        allowEmptyOption: false,   // Non permette di deselezionare (a meno che non ci sia un'option vuota)
+        render: { // Sovrascrivi il render di default per includere l'icona info
+           option: function(data, escape) { return renderTomSelectOption.call(this, data, escape, true); }, // Passa 'true' per l'icona
+           // item: function(data, escape) { return `<div>${escape(data.text)}</div>`; } // item rimane standard
+        }
+        // Nessun onChange specifico necessario per questo select al momento
+    };
+     // Inizializza TomSelect per la dimensione PMI usando la funzione helper
+    initializeTomSelectWithDynamicWidth('dimensione_pmi_hp', dimensioneHpOptions);
+
+    // --- Fine Tom Select ---
+
+     console.log("Script DOMContentLoaded eseguito completamente.");
+  });
+</script>
 
 </body>
 </html>
