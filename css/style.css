@@ -1,398 +1,577 @@
-/* css/style.css - Stili per la Homepage e Globali */
-
-/* -------------------------------------------------------------------
-   1. Variabili CSS Globali (Personalizza qui!)
-   ------------------------------------------------------------------- */
+/* =========================================
+   VARIABILI GLOBALI (Comuni o di Fallback)
+   ========================================= */
    :root {
-    /* Palette Colori Suggerita (Esempio) */
-    --color-primary: #007bff; /* Blu vibrante per azioni principali */
-    --color-primary-dark: #0056b3; /* Per hover/stati attivi */
-    --color-secondary: #6c757d; /* Grigio per testo secondario */
-    --color-background-light: #f8f9fa; /* Sfondo chiaro per sezioni alternate */
-    --color-background-white: #ffffff;
-    --color-text-dark: #212529; /* Testo principale scuro */
-    --color-text-light: #ffffff; /* Testo su sfondi scuri */
-    --color-border: #dee2e6; /* Bordi sottili */
-
-    /* Tipografia Suggerita (Esempio - Assicurati di importare i font) */
-    --font-primary: 'Poppins', sans-serif; /* Esempio di font moderno */
-    --font-secondary: 'Roboto', sans-serif; /* Esempio per il corpo del testo */
-    --font-size-base: 1rem; /* 16px di default */
-    --line-height-base: 1.6;
-
-    /* Spaziatura Suggerita */
-    --spacing-xs: 0.25rem; /* 4px */
-    --spacing-sm: 0.5rem;  /* 8px */
-    --spacing-md: 1rem;    /* 16px */
-    --spacing-lg: 1.5rem;  /* 24px */
-    --spacing-xl: 2.5rem;  /* 40px */
-    --spacing-xxl: 4rem;   /* 64px */
-
-    /* Altro */
-    --border-radius: 0.375rem; /* Bootstrap default: 0.375rem */
-    --box-shadow-sm: 0 .125rem .25rem rgba(0, 0, 0, .075);
-    --box-shadow-md: 0 .5rem 1rem rgba(0, 0, 0, .15);
+    /* Palette base (puoi sovrascriverle sotto) */
+    --primary-color: #007bff;
+    --primary-dark: #0056b3;
+    --accent-color: #ffc107;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --light-bg: #f8f9fa;
+    --white: #ffffff;
+    --text-dark: #212529;
+    --text-light: #6c757d;
+    --border-color: #dee2e6;
+    --border-radius: 6px;
+    --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+    --font-family: 'Inter', sans-serif;
+    --section-padding-y: 60px; /* Padding sezione originale HP */
+     /* Gradienti per hero originale HP */
+    --gradient-1: #6a11cb;
+    --gradient-2: #2575fc;
+    --gradient-3: #ec008c;
+    --gradient-4: #fc6767;
 }
 
-/* -------------------------------------------------------------------
-   2. Reset di Base e Stili Globali
-   ------------------------------------------------------------------- */
+/* =========================================
+   RESET E STILI BODY BASE
+   ========================================= */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
 body {
-    font-family: var(--font-secondary);
-    font-size: var(--font-size-base);
-    line-height: var(--line-height-base);
-    color: var(--color-text-dark);
-    background-color: var(--color-background-white);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    font-family: var(--font-family);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    /* Background e colore testo specifici per pagina */
+}
+body.homepage {
+    background-color: var(--light-bg); /* Sfondo chiaro originale HP */
+    color: var(--text-dark);
+    overflow-x: hidden; /* Originale HP */
+}
+body:not(.homepage) {
+    background-color: var(--light-bg); /* Sfondo chiaro anche per Tool */
+    color: var(--text-dark);
+    padding-top: 85px; /* Padding per header fisso Tool */
 }
 
-h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-primary);
-    font-weight: 600; /* Un po' più bold */
-    margin-top: 0;
-    margin-bottom: var(--spacing-md);
-    line-height: 1.3;
-}
-
-h1 { font-size: calc(1.375rem + 1.5vw); } /* Responsive H1 */
-h2 { font-size: calc(1.3rem + 0.6vw); }  /* Responsive H2 */
-h3 { font-size: calc(1.25rem + 0.3vw); } /* Responsive H3 */
-@media (min-width: 1200px) {
-  h1 { font-size: 2.5rem; } /* Max size su schermi grandi */
-  h2 { font-size: 2rem; }
-  h3 { font-size: 1.75rem; }
-}
-
-p {
-    margin-bottom: var(--spacing-md);
-}
-
-a {
-    color: var(--color-primary);
-    text-decoration: none;
-    transition: color 0.2s ease-in-out;
-}
-a:hover {
-    color: var(--color-primary-dark);
-    text-decoration: underline;
-}
-
-/* Utility per padding sezioni */
-.section-padding {
-    padding-top: var(--spacing-xxl);
-    padding-bottom: var(--spacing-xxl);
-}
-
-/* Titolo di sezione standard */
-.section-title {
-    margin-bottom: var(--spacing-xl);
-    font-weight: 700; /* Più marcato */
-}
-
-/* Sfondo chiaro alternato */
-.bg-light {
-     background-color: var(--color-background-light) !important; /* Usa !important se necessario per sovrascrivere Bootstrap */
-}
+/* Wrapper per footer */
+.content-wrapper { flex-grow: 1; }
 
 
-/* -------------------------------------------------------------------
-   3. Header (da includes/header.php)
-   ------------------------------------------------------------------- */
-.navbar {
-    /* Aggiungi stili personalizzati per la navbar se necessario */
-    padding-top: var(--spacing-md);
-    padding-bottom: var(--spacing-md);
-    box-shadow: var(--box-shadow-sm);
-}
-.navbar-brand img {
-    max-height: 40px; /* Adatta all'altezza del tuo logo */
-}
 
-/* -------------------------------------------------------------------
-   4. Hero Section (index.php)
-   ------------------------------------------------------------------- */
-.hero-section {
-    /* SUGGERIMENTO: Scegli uno stile. Esempio con colore di sfondo e padding */
-    background-color: #eef2ff; /* Esempio: Blu molto chiaro, da adattare */
-    /* background: linear-gradient(135deg, #eef2ff 0%, #ffffff 100%); */ /* Esempio gradiente più sottile */
-    padding: var(--spacing-xxl) 0;
-    text-align: center;
-    position: relative;
-    overflow: hidden; /* Nasconde eventuali elementi grafici che escono */
+    /* Evidenziazione Scelte Iniziali (Step 2) */
+.initial-choices {
+     background-color: #e7f3ff; /* Blu molto chiaro */
+     border: 1px solid #b3d7ff;
+     padding: 15px 20px;
+     border-radius: var(--border-radius);
+     margin-bottom: 30px;
+     display: flex;
+     align-items: center;
+     justify-content: center; /* O space-around */
+     gap: 25px; /* Spazio tra i badge */
+     flex-wrap: wrap; /* Per mobile */
 }
-
-/* Rimuovi o adatta questo se usi un background diverso */
-/* .animated-gradient { ... } */
-
-.hero-section h1 {
-    color: var(--color-text-dark); /* Assicurati leggibilità sul bg scelto */
-    font-weight: 700;
-    margin-bottom: var(--spacing-md);
-}
-
-.hero-section .sub-headline {
-    font-size: 1.15rem;
-    color: var(--color-secondary); /* Grigio per il sottotitolo */
-    margin-bottom: var(--spacing-xl);
-    max-width: 700px; /* Limita larghezza per leggibilità */
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* -------------------------------------------------------------------
-   5. Form di Ricerca Iniziale (index.php)
-   ------------------------------------------------------------------- */
-.search-form-container {
-    background-color: var(--color-background-white);
-    padding: var(--spacing-lg);
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow-md);
-    max-width: 900px; /* Limita larghezza form */
-    margin: var(--spacing-xl) auto 0 auto; /* Spazio sopra, centrato */
-    display: inline-block; /* Per centrare correttamente se necessario */
-    text-align: left; /* Allinea contenuto interno a sinistra */
-}
-
-/* Stile per TomSelect (richiede CSS di TomSelect incluso) */
-/* Puoi sovrascrivere qui alcuni stili base se necessario */
-.ts-control {
-    padding: 0.75rem 1rem !important; /* Aumenta leggermente padding */
-    border: 1px solid var(--color-border) !important;
-    border-radius: var(--border-radius) !important;
-}
-.ts-control:focus-within { /* Stile al focus */
-     border-color: var(--color-primary) !important;
-     box-shadow: 0 0 0 0.2rem rgba(var(--color-primary), 0.25) !important; /* Simula focus Bootstrap */
-}
-.ts-dropdown {
-    border-radius: var(--border-radius) !important;
-    border-color: var(--color-border) !important;
-    z-index: 1050; /* Assicura sia sopra altri elementi */
-}
-
-
-/* Bottone Primario (Globale ma importante qui) */
-.btn-primary {
-    background-color: var(--color-primary);
-    border-color: var(--color-primary);
-    padding: 0.75rem 1.5rem; /* Padding generoso */
-    font-weight: 600;
-    text-transform: uppercase; /* Opzionale: rende più "call to action" */
-    letter-spacing: 0.5px;
-    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, transform 0.1s ease-in-out;
-    border-radius: var(--border-radius);
-}
-
-.btn-primary:hover {
-    background-color: var(--color-primary-dark);
-    border-color: var(--color-primary-dark);
-    transform: translateY(-2px); /* Leggero effetto sollevamento */
-    box-shadow: var(--box-shadow-sm);
-}
-
-.btn-lg { /* Assicurati che .btn-lg sia consistente */
-     padding: 0.85rem 1.8rem;
-     font-size: 1.1rem;
-}
-
-
-.form-microcopy {
-    font-size: 0.85rem;
-    color: var(--color-secondary);
-    text-align: center; /* Centra il testo sotto il form */
-    margin-top: var(--spacing-md); /* Spazio dal form */
-}
-
-/* -------------------------------------------------------------------
-   6. Sezione Mappa (index.php - Se mantenuta)
-   ------------------------------------------------------------------- */
-.map-section {
-    padding: var(--spacing-xxl) 0;
-    /* Stili specifici se si implementa la mappa */
-}
-#map-placeholder {
-    border-radius: var(--border-radius);
-    border: 1px solid var(--color-border);
-}
-
-/* -------------------------------------------------------------------
-   7. Sezione "Come Funziona" (index.php)
-   ------------------------------------------------------------------- */
-.how-it-works-section {
-   /* Usa .section-padding definito sopra */
-}
-
-.step-card {
-    background-color: var(--color-background-white);
-    padding: var(--spacing-lg);
-    border-radius: var(--border-radius);
-    /* border: 1px solid var(--color-border); */ /* Bordo opzionale */
-    /* box-shadow: var(--box-shadow-sm); */ /* Ombra opzionale */
-    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-    height: 100%; /* Assicura altezza uguale se in una riga */
-}
-.step-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--box-shadow-md);
-}
-
-.step-icon {
-    /* Se usi SVG o IMG, potresti non aver bisogno di un div contenitore */
-    margin-bottom: var(--spacing-lg);
-    display: inline-block;
-    /* Stile per le icone FontAwesome di esempio */
-    color: var(--color-primary);
-    font-size: 3rem; /* Dimensione icone */
-}
-/* Se usi SVG/IMG: */
-/* .step-icon img, .step-icon svg {
-    max-width: 60px; // Adatta la dimensione
-    height: auto;
-} */
-
-.step-title {
-    font-size: 1.2rem;
-    margin-bottom: var(--spacing-sm);
-    font-weight: 700;
-}
-
-.step-description {
+.choice-badge {
+    background-color: var(--white);
+    padding: 8px 15px;
+    border-radius: 20px; /* Forma a pillola */
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     font-size: 0.95rem;
-    color: var(--color-secondary);
+    font-weight: 500;
+    border: 1px solid #b3d7ff;
+    color: var(--primary-dark);
+}
+.choice-badge i {
+    color: var(--primary-color);
+    font-size: 1.1rem;
 }
 
-/* -------------------------------------------------------------------
-   8. Sezione Vantaggi (index.php)
-   ------------------------------------------------------------------- */
-.benefits-section {
-    /* Usa .section-padding e .bg-light definiti sopra */
+/* Card Risultati Preliminari (Step 2) */
+.preliminary-results h4, .final-results h4 {
+    color: var(--text-dark);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
+.preliminary-results h4 i { color: var(--primary-color); font-size: 1.3rem; }
 
-.benefit-card {
-    /* Simile a step-card ma potrebbe avere stile leggermente diverso */
-    background-color: var(--color-background-white);
-    padding: var(--spacing-lg);
+.results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-top: 15px; }
+.result-card {
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--primary-color); /* Bordo colorato */
     border-radius: var(--border-radius);
-    /* border: 1px solid var(--color-border); */
-    box-shadow: var(--box-shadow-sm); /* Ombra più leggera per i vantaggi */
-    transition: transform 0.2s ease-out;
-    height: 100%;
+    padding: 20px;
+    background-color: var(--white);
+    display: flex;
+    flex-direction: column; /* Organizza verticalmente */
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
-/* .benefit-card:hover {
-    transform: translateY(-3px); // Effetto hover più sottile
-} */
-
-.benefit-icon {
-    margin-bottom: var(--spacing-md);
-    color: var(--color-primary);
-    font-size: 2.5rem; /* Icone leggermente più piccole */
+.result-card:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    transform: translateY(-3px);
 }
-/* Se usi SVG/IMG: */
-/* .benefit-icon img, .benefit-icon svg {
-    max-width: 50px;
-    height: auto;
-} */
-
-.benefit-title {
-    font-size: 1rem; /* Titolo più piccolo */
+.card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+.card-icon { font-size: 1.5rem; color: var(--primary-color); flex-shrink: 0; }
+.result-card h5 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--text-dark);
     font-weight: 600;
-    margin-bottom: var(--spacing-xs);
+    flex-grow: 1; /* Occupa spazio disponibile */
 }
+.result-card .card-content p {
+    font-size: 0.95rem;
+    color: var(--text-light);
+    margin-bottom: 15px; /* Spazio prima dell'ente */
+}
+.card-footer { margin-top: auto; /* Spinge in basso */ padding-top: 10px; border-top: 1px solid #eee; }
+.result-card .card-footer small {
+    font-size: 0.85rem;
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+.result-card .card-footer i { margin-right: 5px; } /* Icona ente */
 
-.benefit-description {
-    font-size: 0.9rem;
-    color: var(--color-secondary);
+/* Risultati Finali (Step 3) */
+.final-results { margin-bottom: 30px; }
+.highlight-credito-imposta { /* Stile come prima o aggiornato */ }
+.final-results h4 i { color: var(--success-color); font-size: 1.3rem; }
+.final-results ul { list-style: none; padding-left: 0; }
+.final-results li {
+     background-color: var(--white);
+     padding: 12px 18px;
+     border: 1px solid var(--border-color);
+     border-left: 4px solid var(--success-color);
+     border-radius: var(--border-radius);
+     margin-bottom: 10px;
+     font-weight: 500;
+     color: var(--text-dark);
+     transition: background-color 0.2s;
 }
+ .final-results li:hover { background-color: #f8f9fa; }
+.nessun-risultato { /* Stile come prima o aggiornato */ }
 
-/* -------------------------------------------------------------------
-   9. Sezione CTA Finale (index.php)
-   ------------------------------------------------------------------- */
-.cta-section {
-   /* Usa .section-padding */
-   background-color: var(--color-primary); /* Sfondo con colore primario */
-   color: var(--color-text-light); /* Testo chiaro */
-   text-align: center;
-}
-.cta-section .section-title {
-    color: var(--color-text-light);
-}
-.cta-section .lead {
-    color: rgba(255, 255, 255, 0.85); /* Testo leggermente trasparente */
-    margin-bottom: var(--spacing-lg);
-}
-/* Stile bottone per la sezione CTA (esempio: invertito) */
-.cta-section .btn-primary {
-    background-color: var(--color-background-white);
-    border-color: var(--color-background-white);
-    color: var(--color-primary);
-}
-.cta-section .btn-primary:hover {
-    background-color: var(--color-background-light);
-    border-color: var(--color-background-light);
-    color: var(--color-primary-dark);
-}
+/* Conferma (Step 4) */
+.confirmation-box { /* Stile come prima o aggiornato */ }
 
-
-/* -------------------------------------------------------------------
-   10. Footer (da includes/footer.php)
-   ------------------------------------------------------------------- */
-.footer {
-    background-color: var(--color-text-dark); /* Footer scuro */
-    color: rgba(255, 255, 255, 0.7); /* Testo chiaro ma non bianco puro */
-    padding-top: var(--spacing-xl);
-    padding-bottom: var(--spacing-xl);
-    font-size: 0.9rem;
-}
-.footer a {
-    color: rgba(255, 255, 255, 0.9);
-}
-.footer a:hover {
-    color: var(--color-text-light);
-    text-decoration: underline;
-}
-.footer .text-muted { /* Sovrascrive Bootstrap per contrasto */
-     color: rgba(255, 255, 255, 0.5) !important;
-}
-.footer .list-inline-item:not(:last-child) {
-    margin-right: var(--spacing-md); /* Spazio tra link footer */
-}
+ /* Fatal Error */
+.fatal-error-display { /* Stile come prima o aggiornato */ }
 
 
-/* -------------------------------------------------------------------
-   11. Media Queries per Responsività (Esempio base)
-   ------------------------------------------------------------------- */
-@media (max-width: 991.98px) {
-    /* Stili per tablet e dispositivi più piccoli */
-    h1 { font-size: calc(1.325rem + 0.9vw); }
-    h2 { font-size: calc(1.275rem + 0.3vw); }
+/* =========================================
+   HEADER GLOBALE (Logica comune, stile specifico)
+   ========================================= */
+/* =========================================
+   HEADER GLOBALE (Logica comune, stile specifico)
+   ========================================= */
+   .tool-header { /* Classe comune per entrambi */
+    width: 100%;
+    z-index: 1030;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease, padding 0.3s ease;
+    /* Rimosso padding e position da qui, gestiti sotto */
+}
+.tool-header .header-container { /* Contenitore larghezza UNIFICATO */
+    max-width: 1200px; /* USA LO STESSO MAX-WIDTH PER ENTRAMBI */
+    margin: 0 auto;
+    padding: 0 20px; /* Padding laterale contenitore */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+/* Rimosso: body:not(.homepage) .tool-header .header-container { max-width: 1140px; } */
 
-    .search-form-container .row > div {
-        margin-bottom: var(--spacing-md); /* Aggiunge spazio tra gli input in colonna */
-    }
-    .search-form-container .row > div:last-child {
-        margin-bottom: 0;
-    }
-     .search-form-container .btn-primary {
-        width: 100%; /* Bottone a larghezza piena su mobile */
-    }
+.tool-header .logo a { display: inline-block; }
+.tool-header .logo img { height: auto; display: block; transition: filter 0.3s ease, max-width 0.3s ease; }
+.tool-header .header-actions { display: flex; align-items: center; transition: gap 0.3s ease;}
+.tool-header .header-actions a { text-decoration: none; transition: color 0.2s ease, transform 0.2s ease, font-size 0.3s ease; }
+.tool-header .header-actions a:hover { transform: scale(1.05); /* Ridotto leggermente hover scale */ }
+
+/* --- Stili Header Specifici per HOMEPAGE (body.homepage) --- */
+body.homepage .tool-header {
+    padding: 15px 0; /* Padding iniziale home (più alto) */
+    position: absolute;
+    top: 0; left: 0;
+    background-color: transparent;
+}
+body.homepage .tool-header .logo img {
+    max-width: 90px; /* Dimensione logo iniziale home */
+    filter: brightness(0) invert(1);
+}
+body.homepage .tool-header .header-actions { gap: 25px; }
+body.homepage .tool-header .header-actions a {
+    color: var(--white);
+    font-size: 1.6rem;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+body.homepage .tool-header .header-actions a:hover { color: var(--accent-color); }
+
+/* Header Homepage quando Scrolled (STATO FISSO) */
+body.homepage .tool-header.scrolled {
+    position: fixed;
+    padding: 15px 0; /* Padding UNIFICATO per stato fisso */
+    background-color: var(--white);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-bottom: 1px solid var(--border-color);
+}
+body.homepage .tool-header.scrolled .logo img {
+    max-width: 90px; /* Dimensione logo UNIFICATA per stato fisso */
+    filter: none;
+}
+body.homepage .tool-header.scrolled .header-actions {
+    gap: 20px; /* Gap UNIFICATO per stato fisso */
+}
+body.homepage .tool-header.scrolled .header-actions a {
+    color: var(--text-dark);
+    font-size: 1.5rem; /* Dimensione UNIFICATA per stato fisso */
+    text-shadow: none;
+}
+body.homepage .tool-header.scrolled .header-actions a:hover { color: var(--primary-color); }
+
+/* --- Stili Header Specifici per TOOL (body:not(.homepage)) (STATO FISSO) --- */
+body:not(.homepage) .tool-header {
+    padding: 15px 0; /* Padding UNIFICATO per stato fisso */
+    position: fixed;
+    top: 0; left: 0;
+}
+/* Container width già unificato sopra */
+body:not(.homepage) .tool-header .logo img {
+    max-width: 90px; /* Dimensione logo UNIFICATA per stato fisso */
+    filter: none;
+}
+body:not(.homepage) .tool-header .header-actions {
+    gap: 20px; /* Gap UNIFICATO per stato fisso */
+}
+body:not(.homepage) .tool-header .header-actions a {
+    color: var(--text-dark);
+    font-size: 1.5rem; /* Dimensione UNIFICATA per stato fisso */
+}
+body:not(.homepage) .tool-header .header-actions a:hover { color: var(--primary-color); }
+
+/* Padding Body (Potrebbe ancora essere necessario aggiustare il valore) */
+body:not(.homepage) {
+    padding-top: 75px; /* Riduci leggermente se header con padding 15px è più basso */
+}
+/* Nessun padding-top iniziale per body.homepage */
+
+/* =========================================
+   FOOTER GLOBALE (Unificato)
+   ========================================= */
+.hp-footer { /* Usa la classe originale */
+    text-align: center;
+    padding: 35px 20px;
+    margin-top: auto;
+    background-color: #e9ecef; /* Sfondo chiaro originale */
+    font-size: 0.9em;
+    color: var(--text-light); /* Testo scuro originale */
+    border-top: 1px solid var(--border-color);
+}
+.hp-footer .main-container {} /* Usa il contenitore globale */
+.hp-footer a {
+    color: var(--primary-color); /* Colore link originale */
+    text-decoration: none;
+}
+.hp-footer a:hover {
+     text-decoration: underline; /* Stile hover originale */
+}
+.hp-footer p { margin-bottom: 5px; }
+
+
+/* =========================================
+   STILI SPECIFICI HOMEPAGE (body.homepage)
+   ========================================= */
+
+/* Contenitore specifico HP (se diverso da .main-container) */
+body.homepage .main-content-container { max-width: 1200px; margin: 0 auto; padding: 0 20px var(--section-padding-y) 20px; flex-grow: 1; }
+
+
+body.homepage .hp-hero-top-split {
+    min-height: 450px;
+    height: 70vh; /* Aumentiamo un po' l'altezza per dare spazio alla sfumatura */
+    width: 100%;
+    color: var(--white);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Contenuto centrato */
+    text-align: center;
+    position: relative; /* Mantiene position relative */
+    /* overflow: hidden; RIMOSSO O CAMBIATO - VEDI NOTA */
+    overflow: visible; /* Permette al contenuto posizionato di uscire se necessario */
+    background: linear-gradient(-45deg, var(--gradient-1), var(--gradient-2), var(--gradient-3), var(--gradient-4));
+    background-size: 400% 400%;
+    animation: animatedGradient 25s ease infinite;
+    padding: 120px 20px 120px 20px; /* AUMENTATO padding-bottom per non tagliare la searchbar */
+    z-index: 5; /* Posiziona sopra la mappa */
+
+    /* --- La Maschera per la Sfumatura --- */
+    mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 75%, transparent 100%); /* Prefisso per compatibilità */
+    /* Regola le percentuali: 75% significa che inizia a sfumare dal 75% dell'altezza */
+}
+@keyframes animatedGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+body.homepage .hero-content { position: relative; z-index: 2; margin-bottom: 30px; }
+body.homepage .hp-hero-top-split h1 { font-size: 3.2rem; font-weight: 700; margin-bottom: 15px; line-height: 1.2; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+body.homepage .hp-hero-top-split p.subtitle { font-size: 1.2rem; opacity: 0.9; margin-bottom: 25px; max-width: 750px; margin-left: auto; margin-right: auto; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+body.homepage .hp-hero-top-split p.search-guidance { font-size: 1rem; opacity: 0.85; margin-bottom: 15px; font-weight: 500; }
+
+/* Search Bar HP Originale */
+body.homepage .search-form-container { width: 90%; max-width: 930px; position: relative; z-index: 1000; margin-top: auto; }
+body.homepage .search-bar { background-color: var(--white); padding: 12px; border-radius: 12px; box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15); display: flex; flex-wrap: wrap; gap: 15px; border: 1px solid var(--border-color); }
+body.homepage .search-bar .form-field-wrapper { flex: 1 1 250px; display: flex; align-items: center; background-color: var(--light-bg); border-radius: 8px; padding: 5px 15px; border: 1px solid var(--border-color); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+body.homepage .search-bar .form-field-wrapper:focus-within { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); }
+body.homepage .search-bar .field-icon { width: 18px; height: 18px; margin-right: 12px; flex-shrink: 0; fill: var(--text-light); transition: fill 0.2s ease; }
+body.homepage .search-bar .form-field-wrapper:focus-within .field-icon { fill: var(--primary-color); }
+body.homepage .search-bar select#regione_hp, body.homepage .search-bar select#dimensione_pmi_hp { display: none !important; }
+/* Tom Select HP Originale */
+/* Stili per il dropdown TomSelect quando appeso al body */
+
+
+body.homepage .search-bar .ts-wrapper { flex-grow: 1; font-size: 1rem; box-shadow: none !important; border: none !important; padding: 0 !important; background: transparent !important; min-width: 0; }
+body.homepage .search-bar .ts-control { background: transparent !important; border: none !important; padding: 8px 0 !important; box-shadow: none !important; border-radius: 0; height: auto; display: flex; align-items: center; width: 100%; overflow: hidden; }
+body.homepage .ts-dropdown { border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: var(--white); z-index: 999 !important;}
+body.homepage .ts-dropdown .ts-option { padding: 10px 15px !important; font-size: 0.95rem; text-align: left !important; display: flex !important; justify-content: space-between; align-items: center; cursor: pointer; white-space: nowrap; }
+body.homepage .ts-dropdown .ts-option.active { background-color: rgba(0, 123, 255, 0.1); color: var(--primary-dark); }
+body.homepage .ts-option-text { flex-grow: 1; margin-right: 8px; overflow: hidden; text-overflow: ellipsis; }
+body.homepage .info-icon { font-size: 0.95em; color: var(--text-light); cursor: help; flex-shrink: 0; transition: color 0.2s ease; }
+body.homepage .info-icon:hover { color: var(--primary-color); }
+/* Bottone Cerca HP Originale */
+body.homepage .search-bar button { flex-basis: auto; flex-grow: 0; padding: 14px 30px; font-size: 1.05rem; font-weight: 600; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; white-space: nowrap; }
+body.homepage .search-bar button:hover { background-color: var(--primary-dark); }
+body.homepage .search-bar button:active { transform: scale(0.98); }
+body.homepage .search-bar button i { margin-left: 8px; }
+
+/* Mappa HP Originale */
+body.homepage .hp-map-bottom-split {
+    height: 450px; /* Altezza fissa o dinamica */
+    min-height: 350px;
+    width: 100%;
+    position: relative; /* Mantiene relative */
+    z-index: 1; /* Sotto l'hero */
+    /* margin-top: -100px; */ /* <<<<< COMMENTA O RIMUOVI QUESTA */
+    margin-top: -17.5vh;   /* <<<<< AGGIUNGI QUESTA (0.25 * 70vh) */
+    background-color: #000; /* Cambia lo sfondo fallback a nero ora che la mappa è dark */
+}
+body.homepage #italy-map-fullscreen { width: 100%; height: 100%; }
+body.homepage .leaflet-popup-content-wrapper { border-radius: 8px; }
+body.homepage .leaflet-popup-content { font-family: 'Inter', sans-serif; font-size: 0.95rem;}
+body.homepage .leaflet-popup-content strong { font-weight: 600; }
+body.homepage .leaflet-popup-content .status-label { display: inline-block; padding: 2px 8px; border-radius: 4px; color: white; font-size: 0.8em; margin-left: 8px; font-weight: 500; }
+body.homepage .status-label.green { background-color: #28a745; }
+body.homepage .status-label.yellow { background-color: #ffc107; color: #333;}
+body.homepage .status-label.red { background-color: #dc3545; }
+
+/* Sezioni Contenuto HP Originale */
+body.homepage .content-section { padding: var(--section-padding-y) 0; }
+/* Titolo H2 già definito globalmente */
+body.homepage .how-it-works-section { background-color: var(--white); }
+body.homepage .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 35px; }
+body.homepage .step-card { text-align: center; padding: 30px 25px; background-color: var(--light-bg); border-radius: 10px; border: 1px solid var(--border-color); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+body.homepage .step-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08); }
+body.homepage .step-card .step-icon { font-size: 2.5rem; color: var(--primary-color); margin-bottom: 20px; display: inline-block; }
+body.homepage .step-card h4 { font-size: 1.3rem; font-weight: 600; color: var(--text-dark); margin-bottom: 10px; }
+body.homepage .step-card p { font-size: 0.95rem; color: var(--text-light); line-height: 1.6; }
+body.homepage .benefits-section { background-color: var(--light-bg); }
+body.homepage .benefits-list { list-style: none; padding: 0; max-width: 800px; margin: 0 auto; }
+body.homepage .benefit-item { display: flex; align-items: flex-start; margin-bottom: 25px; }
+body.homepage .benefit-item .benefit-icon { font-size: 1.4rem; color: #28a745; margin-right: 15px; margin-top: 4px; flex-shrink: 0; }
+body.homepage .benefit-item .benefit-text h5 { font-size: 1.15rem; font-weight: 600; color: var(--text-dark); margin-bottom: 5px; }
+body.homepage .benefit-item .benefit-text p { font-size: 1rem; color: var(--text-light); line-height: 1.6; margin: 0; }
+
+/* Alert Box specifico Homepage (se necessario) */
+body.homepage .alert-box { padding: 15px 20px; margin: 20px auto 0 auto; max-width: 900px; border-radius: var(--border-radius); font-weight: 500; display: flex; align-items: center; gap: 10px; position: relative; z-index: 5; }
+body.homepage .alert-warning { background-color: #FFF3CD; border: 1px solid #FFEEBA; color: #856404; }
+body.homepage .alert-danger { background-color: #F8D7DA; border: 1px solid #F5C6CB; color: #721C24; }
+body.homepage .alert-box i { font-size: 1.2rem; }
+
+
+/* =========================================
+   STILI SPECIFICI TOOL.PHP (body:not(.homepage))
+   ========================================= */
+
+/* Contenitore principale del tool */
+body:not(.homepage) .container {
+    width:960px;
+    max-width: 960px; margin: 40px auto; background: var(--white); padding: 50px 80px; border-radius: var(--border-radius); box-shadow: var(--box-shadow);
 }
 
-@media (max-width: 767.98px) {
-    /* Stili per mobile */
-    .section-padding {
-        padding-top: var(--spacing-xl); /* Riduci padding su mobile */
-        padding-bottom: var(--spacing-xl);
-    }
-    .hero-section {
-        padding: var(--spacing-xl) 0;
-    }
-    .search-form-container {
-        padding: var(--spacing-md);
-        margin-left: var(--spacing-sm);
-        margin-right: var(--spacing-sm);
-    }
-    .step-card, .benefit-card {
-        margin-bottom: var(--spacing-lg); /* Spazio tra le card quando in colonna */
-    }
+
+/* Indicatore Step */
+body:not(.homepage) .step-indicator { display: flex; justify-content: space-around; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); position: relative; }
+body:not(.homepage) .step-indicator::before { content: ''; position: absolute; top: 19px; left: 5%; right: 5%; height: 2px; background-color: var(--border-color); z-index: 0; }
+body:not(.homepage) .step-item { text-align: center; color: var(--text-light); flex: 1; position: relative; z-index: 1; }
+body:not(.homepage) .step-item .icon-wrapper { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background-color: var(--white); border: 2px solid var(--border-color); margin-bottom: 8px; transition: border-color 0.3s ease, background-color 0.3s ease; }
+body:not(.homepage) .step-item i { font-size: 1.2rem; color: var(--text-light); transition: color 0.3s ease; }
+body:not(.homepage) .step-item span { font-size: 0.9em; font-weight: 500; display: block; transition: color 0.3s ease; }
+body:not(.homepage) .step-item.active .icon-wrapper { border-color: var(--primary-color); background-color: #e7f3ff; }
+body:not(.homepage) .step-item.active i { color: var(--primary-color); }
+body:not(.homepage) .step-item.active span { color: var(--primary-color); font-weight: 600; }
+body:not(.homepage) .step-item.completed .icon-wrapper { border-color: var(--success-color); background-color: #eafbf0; }
+body:not(.homepage) .step-item.completed i { color: var(--success-color); }
+body:not(.homepage) .step-item.completed span { color: var(--success-color); }
+body:not(.homepage) .step-item.completed a { color: inherit; text-decoration: none; }
+body:not(.homepage) .step-item.completed a:hover .icon-wrapper { border-color: var(--primary-dark); }
+body:not(.homepage) .step-item.completed a:hover span { color: var(--primary-dark); }
+
+/* Sezioni Step Tool */
+body:not(.homepage) .step-section { display: none; }
+body:not(.homepage) .step-section.active { display: block; animation: fadeIn 0.5s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Riepilogo Scelte Tool */
+body:not(.homepage) .current-choices-summary { background-color: #e7f3ff; border: 1px solid #b3d7ff; padding: 18px 25px; border-radius: var(--border-radius); margin-bottom: 35px; display: flex; flex-direction: column; gap: 12px; }
+body:not(.homepage) .summary-row { display: flex; align-items: center; flex-wrap: wrap; gap: 15px; }
+body:not(.homepage) .choice-badge { background-color: var(--white); padding: 8px 15px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.95rem; font-weight: 500; border: 1px solid #b3d7ff; color: var(--primary-dark); white-space: nowrap; }
+body:not(.homepage) .choice-badge i { color: var(--primary-color); font-size: 1.1rem; margin-right: 2px; }
+/* Riga investimenti */
+body:not(.homepage) .summary-row.investments {}
+body:not(.homepage) .summary-label { font-weight: 600; color: #495057; margin-right: 10px; white-space: nowrap; }
+body:not(.homepage) .summary-label i { margin-right: 5px; color: var(--secondary-color); }
+body:not(.homepage) .summary-text { font-size: 0.95rem; color: #343a40; line-height: 1.5; }
+
+/* Form Tool */
+body:not(.homepage) h1 { font-size: 1.8rem; } /* Titolo H1 nel tool */
+body:not(.homepage) label { display: block; margin-bottom: 6px; font-weight: 500; color: #495057; font-size: 0.95rem; }
+body:not(.homepage) input[type="text"],
+body:not(.homepage) input[type="email"],
+body:not(.homepage) input[type="tel"],
+body:not(.homepage) input[type="number"],
+body:not(.homepage) select { width: 100%; padding: 12px 15px; margin-bottom: 18px; border: 1px solid var(--border-color); border-radius: var(--border-radius); box-sizing: border-box; font-size: 1rem; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+body:not(.homepage) input:focus,
+body:not(.homepage) select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); outline: none; }
+body:not(.homepage) input.error,
+body:not(.homepage) select.error { border-color: var(--danger-color); }
+body:not(.homepage) .error-message { color: var(--danger-color); font-size: 0.85em; margin-top: -12px; margin-bottom: 12px; }
+body:not(.homepage) .error-summary { padding: 15px; margin-bottom: 20px; border: 1px solid #f5c6cb; border-radius: 4px; background-color: #f8d7da; color: #721c24; }
+body:not(.homepage) .error-summary ul { margin-top: 5px; padding-left: 20px; margin-bottom: 0; }
+body:not(.homepage) button[type="submit"].button-primary { background-color: var(--primary-color); color: white; padding: 12px 30px; border: none; border-radius: var(--border-radius); font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; display: inline-flex; align-items: center; gap: 8px; }
+body:not(.homepage) button[type="submit"].button-primary:hover { background-color: var(--primary-dark); }
+body:not(.homepage) button[type="submit"].button-primary:active { transform: scale(0.98); }
+body:not(.homepage) .back-link { color: var(--secondary-color); text-decoration: none; font-size: 0.9em; transition: color 0.2s ease; }
+body:not(.homepage) .back-link:hover { color: var(--text-dark); text-decoration: underline; }
+body:not(.homepage) .form-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 30px; }
+body:not(.homepage) .form-notes { font-size: 0.85em; color: var(--text-light); margin-top: 15px; }
+body:not(.homepage) fieldset { border: none; padding: 0; margin-bottom: 25px; }
+body:not(.homepage) legend { font-weight: 600; padding: 0 0 5px 0; margin-bottom: 15px; color: var(--text-dark); font-size: 1.1rem; border-bottom: 1px solid var(--border-color); }
+body:not(.homepage) .checkbox-group label { display: block; margin-bottom: 12px; font-weight: normal; background-color: #fdfdff; padding: 10px 15px; border-radius: 4px; border: 1px solid var(--border-color); cursor: pointer; transition: border-color 0.2s, background-color 0.2s; }
+body:not(.homepage) .checkbox-group label:hover { border-color: #a3cfff; background-color: #f5faff; }
+body:not(.homepage) .checkbox-group input[type="checkbox"] { margin-right: 10px; vertical-align: middle; width: 16px; height: 16px; accent-color: var(--primary-color); }
+body:not(.homepage) .checkbox-group span { vertical-align: middle; color: var(--text-dark); }
+
+/* Card Risultati Preliminari Tool */
+body:not(.homepage) .preliminary-results h4 { color: var(--text-dark); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+body:not(.homepage) .preliminary-results h4 i { color: var(--primary-color); font-size: 1.3rem; }
+body:not(.homepage) .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-top: 15px; }
+body:not(.homepage) .result-card { border: 1px solid var(--border-color); border-left: 4px solid var(--primary-color); border-radius: var(--border-radius); padding: 20px; background-color: var(--white); display: flex; flex-direction: column; transition: box-shadow 0.3s ease, transform 0.3s ease; }
+body:not(.homepage) .result-card:hover { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); transform: translateY(-3px); }
+body:not(.homepage) .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+body:not(.homepage) .card-icon { font-size: 1.5rem; color: var(--primary-color); flex-shrink: 0; }
+body:not(.homepage) .result-card h5 { margin: 0; font-size: 1.15rem; color: var(--text-dark); font-weight: 600; flex-grow: 1; }
+body:not(.homepage) .result-card .card-content p { font-size: 0.95rem; color: var(--text-light); margin-bottom: 15px; }
+body:not(.homepage) .card-footer { margin-top: auto; padding-top: 10px; border-top: 1px solid #eee; }
+body:not(.homepage) .result-card .card-footer small { font-size: 0.85rem; color: var(--secondary-color); font-weight: 500; }
+body:not(.homepage) .result-card .card-footer i { margin-right: 5px; }
+
+/* Risultati Finali Tool */
+body:not(.homepage) .final-results { margin-bottom: 30px; }
+body:not(.homepage) .highlight-credito-imposta { background-color: #e6f7ff; border: 1px solid #91d5ff; padding: 15px; border-radius: 6px; margin-bottom: 25px; }
+body:not(.homepage) .highlight-credito-imposta h4 { color: #096dd9; margin-top: 0; }
+body:not(.homepage) .final-results h4 { color: var(--text-dark); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+body:not(.homepage) .final-results h4 i { color: var(--success-color); font-size: 1.3rem; }
+body:not(.homepage) .results-list { list-style: none; padding-left: 0; }
+body:not(.homepage) .results-list li { background-color: var(--white); padding: 12px 18px; border: 1px solid var(--border-color); border-left: 4px solid var(--success-color); border-radius: var(--border-radius); margin-bottom: 10px; font-weight: 500; color: var(--text-dark); transition: background-color 0.2s; }
+body:not(.homepage) .results-list li:hover { background-color: #f8f9fa; }
+body:not(.homepage) .nessun-risultato { text-align: center; color: var(--text-light); padding: 20px; background-color: var(--light-bg); border-radius: 6px; border: 1px dashed var(--border-color); margin-top: 20px;}
+body:not(.homepage) .section-divider { border: none; border-top: 1px dashed var(--border-color); margin: 40px 0 30px 0; }
+body:not(.homepage) .form-section-title { text-align:center; margin-bottom: 15px; font-size: 1.5rem; }
+body:not(.homepage) .form-section-intro { text-align:center; margin-bottom: 30px; color: var(--text-light); max-width: 600px; margin-left: auto; margin-right: auto;}
+
+/* Conferma Tool */
+body:not(.homepage) .confirmation-box { text-align: center; padding: 40px 20px; background-color: #f0fff4; border: 1px solid #9ae6b4; border-radius: 8px; }
+body:not(.homepage) .icon-conferma { font-size: 4em; color: #38a169; margin-bottom: 20px; display: block;}
+body:not(.homepage) .confirmation-box h1 { color: #2f855a; margin-bottom: 15px; font-size: 1.8rem; }
+body:not(.homepage) .confirmation-box p { color: #333; margin-bottom: 25px; font-size: 1.1rem; }
+body:not(.homepage) .summary-on-confirmation { /* Stile per il riepilogo nella conferma */ }
+body:not(.homepage) .nuova-ricerca.button-secondary { display: inline-flex; align-items: center; gap: 8px; background-color: var(--success-color); color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: 600; transition: background-color 0.2s ease; border: none; cursor: pointer; }
+body:not(.homepage) .nuova-ricerca.button-secondary:hover { background-color: #2f855a; }
+
+/* Fatal Error Tool */
+body:not(.homepage) .fatal-error-display { background-color: #fff5f5; border: 1px solid #fc8181; color: #c53030; padding: 20px; border-radius: 6px; text-align: center; }
+body:not(.homepage) .fatal-error-display i { font-size: 2em; margin-bottom: 10px; display: block;}
+body:not(.homepage) .fatal-error-display p { margin: 0; font-weight: 500; }
+
+
+/* =========================================
+   RESPONSIVE (Unificato e Specificato)
+   ========================================= */
+@media (max-width: 992px) {
+     /* Modifiche generali per schermi medi */
+     .main-container { max-width: 960px; }
+     h2 { font-size: 2rem; }
+
+     /* Modifiche HOMEPAGE */
+     body.homepage .hp-hero-top-split h1 { font-size: 2.8rem; }
+     body.homepage .search-form-container { max-width: 95%; }
+     body.homepage .content-section h2 { font-size: 2rem; } /* Specifica per classi HP */
+
+     /* Modifiche TOOL */
+     body:not(.homepage) h1 { font-size: 1.6rem; }
 }
+
+@media (max-width: 768px) {
+     /* Modifiche generali per schermi piccoli */
+     body:not(.homepage) { padding-top: 75px; } /* Padding solo per tool */
+
+     /* Header Mobile (Globale e specifico Home) */
+     .tool-header { padding: 12px 0 !important; /* Usa !important se necessario per sovrascrivere */ }
+     .tool-header .logo img { max-width: 90px !important; }
+     .tool-header .header-actions { gap: 15px !important; }
+     .tool-header .header-actions a { font-size: 1.3rem !important; }
+     body.homepage .tool-header { position: static !important; background-color: var(--white) !important; box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important; padding: 15px 0 !important; }
+     body.homepage .tool-header .logo img { filter: none !important; max-width: 90px !important; }
+     body.homepage .tool-header .header-actions a { color: var(--text-dark) !important; text-shadow: none !important; font-size: 1.4rem !important; }
+     body.homepage .tool-header .header-actions a:hover { color: var(--primary-color) !important; }
+
+     /* Hero Homepage Mobile */
+     body.homepage .hp-hero-top-split { height: auto; min-height: auto; padding: 60px 15px 30px 15px;z-index:999!important; }
+     body.homepage .hp-hero-top-split h1 { font-size: 2.3rem; }
+     body.homepage .hp-hero-top-split p.subtitle { font-size: 1rem; }
+     body.homepage .search-form-container { width: 100%; padding: 0 15px; margin-top: 25px; max-width: 100%; }
+     body.homepage .search-bar { flex-direction: column; gap: 12px; padding: 15px; }
+     body.homepage .search-bar .form-field-wrapper { flex-basis: auto; min-width: unset; width: 100%; }
+     body.homepage .search-bar button { width: 100%; padding: 15px; }
+
+     /* Mappa Homepage Mobile */
+     body.homepage .hp-map-bottom-split { height: 40vh; min-height: 280px; }
+
+     /* Sezioni Info Homepage Mobile */
+     body.homepage .content-section { padding: 40px 0; }
+     body.homepage .main-content-container { /* Contiene solo le sezioni info ora */
+        max-width: 1200px; margin: 0 auto; padding: 0 20px var(--section-padding-y) 20px;
+        /* Rimosso flex-grow: 1; perché .content-wrapper lo gestisce */
+    }     body.homepage .content-section h2 { font-size: 1.8rem; margin-bottom: 35px; }
+     body.homepage .steps-grid { grid-template-columns: 1fr; gap: 25px; }
+     body.homepage .benefit-item { gap: 15px; align-items: center; }
+     body.homepage .benefit-item .benefit-icon-wrapper { width: 40px; height: 40px;}
+     body.homepage .benefit-item .benefit-icon { font-size: 1.2rem;}
+     body.homepage .benefit-item .benefit-text h5 { font-size: 1.1rem; }
+     body.homepage .benefit-item .benefit-text p { font-size: 0.95rem; }
+
+     /* Tool Mobile */
+     body:not(.homepage) .container { padding: 25px 15px; margin: 20px auto; }
+     body:not(.homepage) h1 { font-size: 1.5rem; }
+     body:not(.homepage) .step-indicator { margin-bottom: 30px; }
+     body:not(.homepage) .step-item .icon-wrapper { width: 35px; height: 35px; }
+     body:not(.homepage) .step-item i { font-size: 1rem; }
+     body:not(.homepage) .step-item span { font-size: 0.8em; }
+     body:not(.homepage) .current-choices-summary { padding: 15px; }
+     body:not(.homepage) .summary-row { gap: 10px; }
+     body:not(.homepage) .choice-badge { padding: 6px 12px; font-size: 0.9rem; }
+     body:not(.homepage) .results-grid { grid-template-columns: 1fr; gap: 15px; }
+     body:not(.homepage) .form-actions { flex-direction: column; gap: 15px; align-items: stretch; }
+     body:not(.homepage) .form-actions .back-link { text-align: center; margin-bottom: 5px; }
+     body:not(.homepage) button[type="submit"].button-primary { width: 100%; justify-content: center; }
+     body:not(.homepage) .confirmation-box { padding: 30px 15px; }
+     body:not(.homepage) .icon-conferma { font-size: 3em; }
+     body:not(.homepage) .confirmation-box h1 { font-size: 1.5rem; }
+     body:not(.homepage) .confirmation-box p { font-size: 1rem; }
+}
+
