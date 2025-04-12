@@ -16,6 +16,8 @@ $current_body_class = $body_class ?? ''; // Fallback a stringa vuota
 <header class="tool-header <?php echo ($current_body_class === 'homepage') ? 'initially-transparent' : 'initially-solid'; ?>">
     <div class="header-container main-container">
          <div class="logo">
+         <link rel="stylesheet" href="css/style.css">
+
              <!-- Usa UN solo logo, preferibilmente scuro o SVG. CSS gestirà il colore. -->
              <a href="/"><img src="/img/logo_dark.png" alt="Facile Agevolazioni" class="logo"></a>
              <!-- Se usi SVG: -->
