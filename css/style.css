@@ -324,7 +324,65 @@ body.homepage .search-bar select#regione_hp, body.homepage .search-bar select#di
 /* Tom Select HP Originale */
 /* Stili per il dropdown TomSelect quando appeso al body */
 
+/* =========================================
+   PULSANTE WHATSAPP FLOTTANTE (Homepage)
+   ========================================= */
 
+   .whatsapp-button {
+    position: fixed; /* Posizione fissa rispetto al viewport */
+    bottom: 25px;    /* Distanza dal basso */
+    right: 25px;     /* Distanza da destra */
+    z-index: 1000;   /* Assicura che sia sopra la maggior parte degli altri elementi */
+    background-color: #25D366; /* Colore verde standard di WhatsApp */
+    color: #FFFFFF;           /* Colore icona (bianco) */
+    width: 60px;              /* Larghezza */
+    height: 60px;             /* Altezza */
+    border-radius: 50%;       /* Rende il pulsante circolare */
+    display: none; /* Nascosto di default */
+    align-items: center;      /* Centra l'icona verticalmente */
+    justify-content: center;  /* Centra l'icona orizzontalmente */
+    font-size: 32px;          /* Dimensione dell'icona */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Ombra per dare profondità */
+    text-decoration: none;    /* Rimuove la sottolineatura dal link */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out; /* Transizione per hover */
+}
+
+/* Mostra il pulsante SOLO sulla homepage */
+body.homepage .whatsapp-button {
+    display: flex; /* Sovrascrive display: none */
+     animation: fadeInButton 0.5s ease-in-out forwards; /* Animazione di comparsa */
+}
+
+/* Animazione di comparsa opzionale */
+@keyframes fadeInButton {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+
+/* Effetto Hover */
+body.homepage .whatsapp-button:hover {
+    transform: scale(1.1); /* Leggero ingrandimento */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3); /* Ombra più pronunciata */
+    background-color: #128C7E; /* Verde WhatsApp più scuro al passaggio del mouse */
+}
+
+/* Adattamenti per Mobile (opzionale, aggiusta se necessario) */
+@media (max-width: 768px) {
+    .whatsapp-button {
+        width: 50px;
+        height: 50px;
+        font-size: 26px;
+        bottom: 15px;
+        right: 15px;
+    }
+}
 body.homepage .search-bar .ts-wrapper { flex-grow: 1; font-size: 1rem; box-shadow: none !important; border: none !important; padding: 0 !important; background: transparent !important; min-width: 0; }
 body.homepage .search-bar .ts-control { background: transparent !important; border: none !important; padding: 8px 0 !important; box-shadow: none !important; border-radius: 0; height: auto; display: flex; align-items: center; width: 100%; overflow: hidden; }
 body.homepage .ts-dropdown { border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: var(--white); z-index: 999 !important;}

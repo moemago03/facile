@@ -92,288 +92,340 @@ $page_description = "Cerca e trova bandi, finanziamenti PNRR e agevolazioni per 
          <p> <a href="/privacy-policy.html" target="_blank">Privacy</a> | <a href="/cookie-policy.html" target="_blank">Cookie</a> | <a href="/contatti.html">Contatti</a> </p>
          <p>© <?php echo date("Y"); ?> NomeServizio | P.IVA XXXXXXX | Strumento informativo, non sostituisce consulenza professionale.</p>
          <p><small>Le informazioni sui bandi potrebbero subire variazioni. Verifica sempre le fonti ufficiali.</small></p>
+         
     </footer>
+    <?php // Chiusura del tuo tag .hp-footer esistente ?>
 
+</div> <?php // Questa è la chiusura del .content-wrapper se lo usi ?>
+
+<!-- Pulsante WhatsApp Flottante -->
+<a href="https://wa.me/39XXXXXXXXXX?text=Buongiorno%2C%20avrei%20una%20domanda%20sul%20servizio%20Facile%20Agevolazioni."
+   class="whatsapp-button"
+   target="_blank"
+   rel="noopener noreferrer"
+   aria-label="Contattaci su WhatsApp">
+    <i class="fab fa-whatsapp"></i> <?php // Assicurati di usare il prefisso corretto per FontAwesome (fab per Brands) ?>
+</a>
+<!-- Fine Pulsante WhatsApp Flottante -->
+
+<?php // Eventuali script JS caricati alla fine del body ?> 
     <!-- JS (Leaflet, Tom Select - senza logica modale) -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
+
+
     <script>
   document.addEventListener('DOMContentLoaded', function() {
     let map;
-    // Assicurati che questa variabile PHP sia definita correttamente sopra questo script
-    // e contenga un oggetto JSON valido con i dati delle regioni (lat, lng, status, label). Esempio:
-    // const regionData = {"Lombardia": {"lat": 45.4642, "lng": 9.1900, "status": "green", "label": "Attivo"}, ...};
+    // Assicurati che $map_data_json sia definito e valido JSON in PHP prima di questo script
     const regionData = <?php echo isset($map_data_json) && json_decode($map_data_json) !== null ? $map_data_json : '{}'; ?>;
-    let regionMarkers = {}; // Oggetto per memorizzare i marker Leaflet per regione
+    let regionMarkers = {}; // Oggetto per memorizzare i marker L.Marker per regione
+    let geojsonLayer = null; // Layer Leaflet per i confini regionali
+    let highlightedRegionLayer = null; // Layer della regione attualmente evidenziata all'interno del geojsonLayer
+    let geojsonLayerLookup = {}; // Oggetto per mappare: nome regione -> layer specifico della regione
+
+    // --- Stili per il Layer GeoJSON (Adatti per Mappa Chiara) ---
+    const defaultRegionStyle = {
+        weight: 0.2,
+        opacity: 0.7,
+        color: '#555555', // Grigio scuro per bordo
+        fillOpacity: 0.05,
+        fillColor: '#AAAAAA' // Grigio per riempimento leggero
+    };
+    const highlightRegionStyle = {
+        weight: 0.6,
+        opacity: 1,
+        color: '#007bff', // Blu primario per bordo evidenziato
+        fillOpacity: 0.2,
+        fillColor: '#007bff' // Blu primario per riempimento evidenziato
+    };
+    // --- Fine Stili GeoJSON ---
 
     // --- Mappa Leaflet ---
     var mapElement = document.getElementById('italy-map-fullscreen');
     if (mapElement) {
         try {
+            // Inizializza la mappa Leaflet
             map = L.map(mapElement, {
                 center: [42.5, 12.5], // Centro Italia
-                zoom: 5.5,           // Zoom iniziale
+                zoom: 2,           // Zoom iniziale
                 scrollWheelZoom: false,// Disabilita zoom con rotellina
-                zoomControl: false    // Nasconde i controlli +/- dello zoom
+                zoomControl: false,    // Nasconde i controlli +/- dello zoom
+                // --- OPZIONE DA TESTARE per performance (decommenta se necessario) ---
+                // preferCanvas: true
+                // --------------------------------------------------------------------
             });
 
-            // Aggiunge il Tile Layer SCURO da CartoDB
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/attributions">CARTO</a>',
-                    subdomains: 'abcd',
-                    maxZoom: 12,
-                    minZoom: 5
-                }).addTo(map);
+            // <<< 1. CREA UN PANNELLO PERSONALIZZATO PER I MARKER >>>
+            // Questo assicura che i marker siano disegnati sopra altri layer come il GeoJSON.
+            map.createPane('customMarkerPane');
+            map.getPane('customMarkerPane').style.zIndex = 650; // Z-index > overlayPane (400), < popupPane (700)
+            // Permette ai click di passare attraverso il pannello se non colpiscono il marker
+            map.getPane('customMarkerPane').style.pointerEvents = 'none';
 
-            // Funzione per creare icone colorate personalizzate
+            // Aggiunge il Tile Layer CHIARO (Standard) da CartoDB
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 10,
+                minZoom: 5
+            }).addTo(map);
+
+            // --- Funzione per creare le icone colorate dei marker ---
             function createColoredIcon(color) {
                 return L.divIcon({
-                    className: 'custom-div-icon', // Puoi usare questa classe per stili CSS aggiuntivi se vuoi
-                    html: `<div style='background-color:${color};width:14px;height:14px;border-radius:50%; border: 2px solid rgba(255,255,255,0.7); box-shadow: 0 1px 3px rgba(0,0,0,0.4);'></div>`,
-                    iconSize: [14, 14], // Dimensioni dell'icona
-                    iconAnchor: [7, 7]   // Punto di ancoraggio (centro)
+                    className: 'custom-div-icon', // Utile per CSS aggiuntivo se serve
+                    // Bordo scuro per visibilità su mappa chiara
+                    html: `<div style='background-color:${color};width:14px;height:14px;border-radius:50%; border: 2px solid rgba(50,50,50,0.6); box-shadow: 0 1px 3px rgba(0,0,0,0.4);'></div>`,
+                    iconSize: [14, 14], // Dimensioni icona
+                    iconAnchor: [7, 7]   // Punto centrale come ancoraggio
                 });
             }
             // Crea le istanze delle icone
-            var greenIcon = createColoredIcon('#28a745'), // Verde
-                yellowIcon = createColoredIcon('#ffc107'), // Giallo
-                redIcon = createColoredIcon('#dc3545');   // Rosso
+            var greenIcon = createColoredIcon('#28a745'),
+                yellowIcon = createColoredIcon('#ffc107'),
+                redIcon = createColoredIcon('#dc3545');
 
-            // Ciclo per creare i marker sulla mappa
+            // --- Ciclo per creare e aggiungere i Marker alla mappa ---
             for (var regionName in regionData) {
                 if (regionData.hasOwnProperty(regionName)) {
                     var data = regionData[regionName];
-                    var icon, statusClass = ''; // Inizializza statusClass
-
-                    // Determina l'icona e la classe CSS in base allo status
+                    var icon, statusClass = '';
+                    // Determina icona e classe CSS in base allo status
                     switch (data.status) {
-                        case 'green':
-                            icon = greenIcon;
-                            statusClass = 'green';
-                            break;
-                        case 'yellow':
-                            icon = yellowIcon;
-                            statusClass = 'yellow';
-                            break;
-                        case 'red':
-                            icon = redIcon;
-                            statusClass = 'red';
-                            break;
-                        default: // Fallback se status non è definito o non corrisponde
-                           // Usa un'icona di default o nessuna icona visibile
-                           icon = L.divIcon({iconSize: [0,0]}); // Icona invisibile
-                           console.warn(`Status non valido o mancante per ${regionName}:`, data.status);
+                        case 'green': icon = greenIcon; statusClass = 'green'; break;
+                        case 'yellow': icon = yellowIcon; statusClass = 'yellow'; break;
+                        case 'red': icon = redIcon; statusClass = 'red'; break;
+                        default: icon = L.divIcon({iconSize: [0,0]}); // Fallback: icona invisibile
                     }
-
-                    // Crea il marker solo se abbiamo latitudine e longitudine
+                    // Crea il marker solo se ci sono coordinate valide
                     if (data.lat && data.lng) {
-                        var marker = L.marker([data.lat, data.lng], { icon: icon }).addTo(map);
+                        // <<< 2. ASSEGNA IL MARKER AL PANNELLO PERSONALIZZATO >>>
+                        var marker = L.marker([data.lat, data.lng], {
+                             icon: icon,                 // Usa l'icona colorata creata
+                             pane: 'customMarkerPane'    // Importante: disegna sul nostro pannello personalizzato
+                        }).addTo(map); // Aggiunge il marker alla mappa
 
                         // Crea il contenuto del popup
                         var popupContent = `<strong>${regionName}</strong><br>Stato Fondi: `;
                         if (statusClass) {
-                            // Usa l'etichetta 'label' se disponibile, altrimenti un testo generico
                             popupContent += `<span class='status-label ${statusClass}'>${data.label || data.status.charAt(0).toUpperCase() + data.status.slice(1)}</span>`;
                         } else {
                             popupContent += "N/D"; // Non disponibile
                         }
-                        marker.bindPopup(popupContent);
+                        marker.bindPopup(popupContent); // Associa il popup al marker
 
-                        // Memorizza il marker nell'oggetto `regionMarkers`
+                        // Memorizza il riferimento all'oggetto marker Leaflet
                         regionMarkers[regionName] = marker;
-                    } else {
-                        console.warn(`Lat/Lng mancanti per ${regionName}. Marker non creato.`);
                     }
                 }
             }
+            // --- Fine Creazione Marker ---
 
-            // Invalida la dimensione della mappa dopo un breve ritardo per assicurare il rendering corretto
+            // --- Carica e Aggiungi il Layer GeoJSON dei Confini Regionali ---
+            // <<< MODIFICA QUESTO PERCORSO SE IL TUO FILE È ALTROVE >>>
+            fetch('assets/data/georef-italy-regione.geojson')
+                .then(response => {
+                    // Controlla se la richiesta HTTP ha avuto successo
+                    if (!response.ok) { throw new Error(`Errore HTTP ${response.status} nel caricare il GeoJSON`); }
+                    // Parsa la risposta come JSON
+                    return response.json();
+                })
+                .then(geojsonData => {
+                    // Crea il layer GeoJSON
+                    geojsonLayer = L.geoJSON(geojsonData, {
+                        style: defaultRegionStyle, // Applica lo stile di default
+                        interactive: false,        // Impedisce interazioni dirette con i poligoni (es. click)
+                        // --- OPZIONE DA TESTARE (se hai messo preferCanvas sulla mappa) ---
+                        // preferCanvas: true
+                        // -----------------------------------------------------------------
+                        // Funzione eseguita per ogni feature (regione) nel GeoJSON
+                        onEachFeature: function (feature, layer) {
+                            // Popola l'oggetto lookup per accesso rapido
+                            const featurePropertyName = 'reg_name'; // <<< Nome proprietà nel tuo GeoJSON
+                            // Controlla che la proprietà esista prima di aggiungerla al lookup
+                            if (feature?.properties?.[featurePropertyName]) {
+                                const regionNameValue = feature.properties[featurePropertyName];
+                                geojsonLayerLookup[regionNameValue] = layer; // Mappa: "Nome Regione" -> Oggetto Layer Leaflet
+                            } else {
+                                console.warn("Proprietà regione mancante o non trovata in una feature GeoJSON:", feature?.properties);
+                            }
+                        }
+                    }).addTo(map); // Aggiunge il layer GeoJSON alla mappa
+
+                    console.log("Layer GeoJSON delle regioni caricato e lookup creato.");
+
+                    // <<< LA RIGA marker.bringToFront() È STATA RIMOSSA >>>
+                    // L'ordine è ora gestito dai pannelli ('customMarkerPane').
+
+                })
+                .catch(error => {
+                    // Cattura errori di rete o di parsing JSON
+                    console.error('>>> ERRORE REALE Caricamento/Parsing GeoJSON:', error);
+                    // Mostra un messaggio di errore visivo solo se il layer non è stato caricato
+                    if (mapElement) {
+                         const existingErrorMsg = document.getElementById('geojson-error-msg');
+                         if (!existingErrorMsg && !geojsonLayer) { // Mostra solo se non c'è già e il layer è ancora null
+                             mapElement.insertAdjacentHTML('beforeend', '<p id="geojson-error-msg" style="color:red;position:absolute;top:10px;left:10px;z-index:1000;background:rgba(255,255,255,0.7);padding:5px;border-radius:3px;">Errore caricamento confini.</p>');
+                         }
+                    }
+                });
+            // --- Fine Caricamento GeoJSON ---
+
+            // Forza il ricalcolo delle dimensioni della mappa dopo un breve delay
             setTimeout(() => { if (map) map.invalidateSize(); }, 200);
-            console.log("Mappa Leaflet inizializzata con successo.");
+            console.log("Mappa Leaflet inizializzata.");
 
         } catch (e) {
-            console.error("Errore durante l'inizializzazione della mappa Leaflet:", e);
-            // Mostra un messaggio di errore all'utente nel contenitore della mappa
-            if (mapElement) mapElement.innerHTML = "<p style='color:#ccc; text-align:center; padding-top: 50px;'>Impossibile caricare la mappa interattiva.</p>";
+             console.error("Errore grave durante l'inizializzazione della mappa Leaflet:", e);
+             if (mapElement) mapElement.innerHTML = "<p style='color:#555; text-align:center; padding-top: 50px;'>Impossibile caricare la mappa interattiva.</p>";
         }
     } else {
-         console.log("Elemento contenitore della mappa (#italy-map-fullscreen) non trovato nel DOM.");
+         console.log("Elemento contenitore della mappa (#italy-map-fullscreen) non trovato.");
     }
     // --- Fine Mappa Leaflet ---
 
 
-    // --- Tom Select con Larghezza Dinamica e Apertura Popup ---
+    // --- Tom Select (Funzioni Helper e Inizializzazione) ---
 
-    // Funzione helper per renderizzare le opzioni di TomSelect (con/senza icona info)
+    // Funzione per renderizzare le opzioni nel dropdown TomSelect
     function renderTomSelectOption(data, escape, includeIcon = false) {
         let details = '';
-        const tsInstance = this; // 'this' è l'istanza di TomSelect
-        // Accedi all'elemento select originale dall'istanza TomSelect
-        if (tsInstance && tsInstance.settings && tsInstance.settings.originalElement && data.value) {
+        const tsInstance = this;
+        if (tsInstance?.settings?.originalElement && data.value) {
             const originalSelect = tsInstance.settings.originalElement;
-             // Usa try-catch per sicurezza con querySelector e valori potenzialmente problematici
             try {
-                 // Assicurati che il valore sia valido per un selettore CSS
-                 const escapedValue = CSS.escape ? CSS.escape(data.value) : escape(data.value); // Usa CSS.escape se disponibile
-                 const originalOption = originalSelect.querySelector(`option[value="${escapedValue}"]`);
-                if (originalOption) {
-                    details = originalOption.getAttribute('data-details') || '';
-                }
-            } catch(e) {
-                console.warn(`Errore nel trovare l'opzione originale per il valore: ${data.value}`, e);
-            }
+                const escapedValue = CSS.escape ? CSS.escape(data.value) : escape(data.value);
+                const originalOption = originalSelect.querySelector(`option[value="${escapedValue}"]`);
+                if (originalOption) { details = originalOption.getAttribute('data-details') || ''; }
+            } catch(e) { console.warn(`Errore querySelector opzione: ${data.value}`, e); }
         }
-
         let iconHtml = '';
-        // Mostra l'icona solo se includeIcon è true E ci sono dettagli
-        if (includeIcon && details) {
-            // Usa escape sulla stringa dei dettagli per sicurezza nell'attributo title
-            iconHtml = `<i class="fa-regular fa-circle-info info-icon" title="${escape(details)}"></i>`;
-        }
-        // Usa escape sul testo dell'opzione per sicurezza
+        if (includeIcon && details) { iconHtml = `<i class="fa-regular fa-circle-info info-icon" title="${escape(details)}"></i>`; }
         return `<div class="ts-option"><span class="ts-option-text">${escape(data.text)}</span>${iconHtml}</div>`;
     }
 
-    // Funzione Helper per inizializzare TomSelect e gestire la larghezza del dropdown
+    // Funzione Helper per inizializzare TomSelect e gestire la larghezza dinamica del dropdown
     function initializeTomSelectWithDynamicWidth(selectorId, userOptions = {}) {
         const element = document.getElementById(selectorId);
-        if (!element) {
-            console.warn(`Elemento #${selectorId} non trovato per TomSelect.`);
-            return; // Esce se l'elemento non esiste
-        }
-
+        if (!element) { console.warn(`Elemento #${selectorId} non trovato.`); return; }
         try {
-            // Opzioni di default che verranno applicate a tutti i TomSelect inizializzati con questa funzione
             const defaultOptions = {
-                create: false,         // Non permette all'utente di creare nuove opzioni
-                dropdownParent: 'body',// Appende il dropdown al body per evitare problemi di clipping/styling
-                render: {              // Render di default per item e option (può essere sovrascritto)
-                    item: function(data, escape) { return `<div>${escape(data.text)}</div>`; },
-                    option: function(data, escape) { return renderTomSelectOption.call(this, data, escape, false); } // Usa il render helper di default
+                create: false, dropdownParent: 'body',
+                render: {
+                    item: (data, escape) => `<div>${escape(data.text)}</div>`,
+                    option: (data, escape) => renderTomSelectOption.call(this, data, escape, false)
                 },
-                onInitialize: function() {
-                    // Codice eseguito una volta che TomSelect è inizializzato
-                    // 'this' qui è l'istanza di TomSelect
-                    console.log(`TomSelect per #${selectorId} inizializzato.`);
-                     // Potresti aggiungere una classe per indicare che JS ha funzionato
-                    // this.wrapper.classList.add('tomselect-initialized');
-                },
+                onInitialize: function() { console.log(`TomSelect #${selectorId} inizializzato.`); },
                 onDropdownOpen: function(dropdown) {
-                    // Codice eseguito ogni volta che il dropdown si apre
-                    // 'this' è l'istanza TomSelect, 'dropdown' è l'elemento DOM del dropdown
-                    const wrapper = this.wrapper; // Il div .ts-wrapper creato da TomSelect
+                    const wrapper = this.wrapper;
                     if (wrapper && dropdown) {
-                        const wrapperWidth = wrapper.offsetWidth; // Larghezza del campo di input visibile
-                        if (wrapperWidth > 0) {
-                             // Imposta la larghezza MINIMA del dropdown uguale a quella del wrapper
-                             // Permette al dropdown di espandersi se un'opzione è più lunga,
-                             // ma non sarà mai più stretto del campo.
-                            dropdown.style.minWidth = wrapperWidth + 'px';
-
-                            // Se vuoi forzare la larghezza ESATTA (rischio di tagliare opzioni lunghe):
-                            // dropdown.style.width = wrapperWidth + 'px';
-                        } else {
-                             console.warn(`Dropdown #${selectorId}: Impossibile ottenere larghezza valida dal wrapper.`);
-                        }
+                        const wrapperWidth = wrapper.offsetWidth;
+                        if (wrapperWidth > 0) { dropdown.style.minWidth = wrapperWidth + 'px'; }
                     }
                 }
-                // Aggiungi altri eventi di default se necessario (es. onFocus, onBlur, etc.)
             };
-
-            // Unisci le opzioni di default con quelle specifiche passate per questo select
-            // Le opzioni in userOptions sovrascrivono quelle in defaultOptions se hanno lo stesso nome
             const finalOptions = { ...defaultOptions, ...userOptions };
-            // Gestione speciale per l'oggetto 'render', per unire le sue proprietà invece di sovrascrivere l'intero oggetto
-            if (userOptions.render) {
-                finalOptions.render = { ...defaultOptions.render, ...userOptions.render };
-            }
-            // Assicurati che funzioni come onChange vengano correttamente assegnate se presenti in userOptions
-             if (userOptions.onChange) {
-                 finalOptions.onChange = userOptions.onChange;
-             }
-
-
-            // Inizializza TomSelect sull'elemento con le opzioni finali
+            if (userOptions.render) { finalOptions.render = { ...defaultOptions.render, ...userOptions.render }; }
+            if (userOptions.onChange) { finalOptions.onChange = userOptions.onChange; }
             new TomSelect(element, finalOptions);
-
-        } catch (e) {
-            console.error(`Errore durante l'inizializzazione di TomSelect per #${selectorId}:`, e);
-        }
+        } catch (e) { console.error(`Errore TomSelect per #${selectorId}:`, e); }
     }
 
-    // --- Inizializzazione Specifica per i Select della Homepage ---
+    // --- Inizializzazione Specifica dei Select ---
 
-    // Opzioni specifiche per il select della Regione (#regione_hp)
+    // Opzioni per il select della Regione (#regione_hp)
     const regioneHpOptions = {
-        sortField: { field: null }, // Mantiene l'ordine originale delle opzioni nell'HTML
-        // Non serve 'render' qui perché vogliamo quello di default (senza icona info)
+        sortField: { field: null }, // Mantiene l'ordine HTML
 
-        // Funzione eseguita quando il valore del select cambia
-        onChange: function(value) {
-            if (map) { // Controlla se la mappa è stata inizializzata
-                if (value && regionData[value]) {
-                    // È stata selezionata una regione valida
-                    const regionInfo = regionData[value]; // Dati della regione selezionata
+        // Funzione chiamata quando l'utente seleziona/deseleziona una regione
+        onChange: function(value) { // 'value' è il nome della regione (es. "Lombardia") o null/""
 
-                    if (regionInfo.lat && regionInfo.lng) {
-                        // Vola sulla mappa alle coordinate della regione
-                        map.flyTo([regionInfo.lat, regionInfo.lng], 8, { // Zoom 8 sulla regione
-                            animate: true,
-                            duration: 1.0 // Durata animazione in secondi
-                        });
+            // 1. Resetta Subito lo Stile della Regione Precedentemente Evidenziata
+            if (highlightedRegionLayer && geojsonLayer) {
+                try { geojsonLayer.resetStyle(highlightedRegionLayer); }
+                catch (e) { console.warn("Errore nel resettare lo stile:", e); }
+                highlightedRegionLayer = null; // Rimuovi riferimento
+            }
 
-                        // Cerca il marker corrispondente nell'oggetto che abbiamo popolato
+            // Chiudi subito eventuali popup dei marker aperti
+            if (map) { map.closePopup(); }
+
+            // 2. Gestisci la Nuova Selezione (o deselezione)
+            if (map && value && regionData[value]) {
+                // --- È stata selezionata una regione valida ---
+                const regionInfo = regionData[value];
+
+                if (regionInfo.lat && regionInfo.lng) {
+                    // Definisci cosa fare DOPO che l'animazione flyTo è completata
+                    const onFlyToEnd = function() {
+                        console.log("Animazione flyTo terminata per:", value);
+
+                        // 3. Evidenzia il Confine della Regione (usando il lookup)
+                        if (geojsonLayer && geojsonLayerLookup[value]) {
+                            const targetRegionLayer = geojsonLayerLookup[value];
+                            targetRegionLayer.setStyle(highlightRegionStyle); // Applica stile highlight
+                            highlightedRegionLayer = targetRegionLayer; // Memorizza riferimento
+                            console.log(`Regione ${value} evidenziata dopo flyTo.`);
+                        } else {
+                            console.warn(`Layer GeoJSON o regione "${value}" non trovati nel lookup dopo flyTo.`);
+                        }
+
+                        // 4. Apri il Popup del Marker corrispondente
                         const targetMarker = regionMarkers[value];
                         if (targetMarker) {
-                            // Apri il popup del marker trovato
-                            // Usa setTimeout per dare tempo a flyTo di iniziare l'animazione
-                            setTimeout(() => {
-                                targetMarker.openPopup();
-                                console.log("Popup aperto per:", value);
-                            }, 400); // Ritardo in millisecondi (prova ad aggiustarlo se serve)
+                            targetMarker.openPopup();
+                            console.log("Popup aperto dopo flyTo per:", value);
                         } else {
-                            console.warn("Marker non trovato per la regione selezionata:", value);
-                            map.closePopup(); // Chiudi eventuali popup aperti se non c'è marker
+                             console.warn(`Marker non trovato per ${value} dopo flyTo.`);
                         }
-                    } else {
-                         console.warn(`Lat/Lng mancanti per la regione selezionata: ${value}`);
-                         map.closePopup(); // Chiudi popup se mancano coordinate
-                    }
-                } else {
-                    // Nessuna regione selezionata (valore vuoto) o regione non trovata nei dati
-                    // Riporta la mappa alla vista iniziale
-                    map.flyTo([42.5, 12.5], 5.5, { // Coordinate e zoom iniziali
+
+                        // Rimuovi questo listener per evitare che si attivi di nuovo
+                        map.off('moveend', onFlyToEnd);
+                    };
+
+                    // Registra il listener per l'evento 'moveend' (UNA SOLA volta)
+                    map.once('moveend', onFlyToEnd);
+
+                    // Avvia l'animazione flyTo
+                    map.flyTo([regionInfo.lat, regionInfo.lng], 8, {
                         animate: true,
-                        duration: 1.0
+                        duration: 0.8 // Durata animazione (prova a variare)
                     });
-                    // Chiudi qualsiasi popup eventualmente aperto
-                    map.closePopup();
+
+                } else {
+                     console.warn(`Lat/Lng mancanti per ${value}, impossibile eseguire flyTo.`);
+                     // Reset stile e popup già fatti all'inizio
                 }
-            } else {
-                console.warn("La mappa non è inizializzata, impossibile interagire con onChange della regione.");
+            } else if (map) {
+                // --- Nessuna Regione Selezionata o Valore Non Valido ---
+                // Riporta la mappa alla vista generale
+                map.flyTo([42.5, 12.5], 5.5, {
+                    animate: true,
+                    duration: 0.8
+                });
+                // Stile e popup già resettati/chiusi all'inizio
             }
-        }
+        } // Fine onChange
     };
-    // Inizializza TomSelect per la regione usando la funzione helper
+    // Inizializza TomSelect per la regione
     initializeTomSelectWithDynamicWidth('regione_hp', regioneHpOptions);
 
-    // Opzioni specifiche per il select della Dimensione PMI (#dimensione_pmi_hp)
+    // Opzioni per il select della Dimensione PMI (#dimensione_pmi_hp)
     const dimensioneHpOptions = {
-        sortField: { field: null }, // Mantiene l'ordine originale
-        allowEmptyOption: false,   // Non permette di deselezionare (a meno che non ci sia un'option vuota)
-        render: { // Sovrascrivi il render di default per includere l'icona info
-           option: function(data, escape) { return renderTomSelectOption.call(this, data, escape, true); }, // Passa 'true' per l'icona
-           // item: function(data, escape) { return `<div>${escape(data.text)}</div>`; } // item rimane standard
+        sortField: { field: null },
+        allowEmptyOption: false,
+        render: { // Mostra icona info
+           option: function(data, escape) { return renderTomSelectOption.call(this, data, escape, true); }
         }
-        // Nessun onChange specifico necessario per questo select al momento
     };
-     // Inizializza TomSelect per la dimensione PMI usando la funzione helper
+     // Inizializza TomSelect per la dimensione PMI
     initializeTomSelectWithDynamicWidth('dimensione_pmi_hp', dimensioneHpOptions);
-
     // --- Fine Tom Select ---
 
-     console.log("Script DOMContentLoaded eseguito completamente.");
-  });
+    console.log("Script principale (DOMContentLoaded) eseguito completamente.");
+  }); // Fine DOMContentLoaded
 </script>
 
 </body>
